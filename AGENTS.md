@@ -1,5 +1,11 @@
 # bun-svelte-starter
 
+> **This is a starter template, not a finished application.** This file
+> describes the template's stack and conventions. Once the real application
+> takes shape, rewrite this file to describe that application — its purpose,
+> domain, structure, and conventions — and drop this notice. Treat the example
+> routes and components as placeholders to replace, not patterns to preserve.
+
 Full-stack Bun app that compiles to a single binary (`dist/app`).
 Svelte 5 SPA in `web/`, Hono + Zod API in `server/`, end-to-end typed via Hono RPC.
 No Vite, no Node.js — Bun bundles everything, including the frontend.
@@ -15,17 +21,21 @@ All of check, lint, and format must pass before committing.
 
 ## Architecture
 
-- `index.ts` — entry point. `Bun.serve()` serves the imported `web/index.html`
-  at `/` and delegates `/api/*` to the Hono app.
-- `server/index.ts` — Hono app on `.basePath("/api")`. Validate request bodies
-  with `zValidator` from `@hono/zod-validator`. Routes MUST stay in the chained
-  style (`new Hono().get(...).post(...)`) — `export type AppType` powers the
-  RPC client, and standalone `app.get(...)` calls break type inference.
-- `web/api.ts` — typed client: `hc<AppType>(...)`. Frontend calls the API only
-  through this client.
+The split is fixed: backend code lives in `server/`, frontend code in `web/`.
+`server/` must never import from `web/`; `web/` imports only types from
+`server/`.
+
+- Entry point — `Bun.serve()` serves the SPA's HTML and delegates `/api/*` to
+  the Hono app.
+- `server/` — Hono app on `.basePath("/api")`. Validate request bodies with
+  `zValidator` from `@hono/zod-validator`. Routes MUST stay in the chained
+  style (`new Hono().get(...).post(...)`) — the exported `AppType` powers the
+  RPC client, and standalone `app.get(...)` calls break type inference. Split
+  routes into sub-apps mounted with `.route()` as the API grows.
 - `web/` — Svelte 5 with runes (`$state`, `$derived`; `mount` from `svelte`).
-  Client-side rendering only: `bun-plugin-svelte` does not support SSR.
-- `web/app.css` — `@import "tailwindcss"` (Tailwind v4, no config file).
+  Client-side rendering only: `bun-plugin-svelte` does not support SSR. The
+  frontend calls the API only through the typed `hc<AppType>(...)` client.
+- Styling — Tailwind v4 via `@import "tailwindcss"`, no config file.
 
 ## Build pipeline
 
@@ -51,3 +61,5 @@ All of check, lint, and format must pass before committing.
   `WebSocket` — over express/better-sqlite3/node:fs/execa/ws.
 - Bun loads `.env` automatically — don't use dotenv.
 - Bun API docs: `node_modules/bun-types/docs/**.mdx`.
+- `bunfig.toml` sets a 7-day `minimumReleaseAge` as a supply-chain guard. Don't
+  bypass it to grab a fresh release.
