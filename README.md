@@ -1,7 +1,7 @@
 # bun-svelte-starter
 
 Starter template for a full-stack Bun app that compiles to a single binary.
-Svelte 5 + Tailwind v4 frontend (`web/`, bundled by Bun — no Vite) and a
+Svelte 5 + Tailwind v4 frontend (`web/`, bundled by Bun, no Vite) and a
 Hono + Zod API (`server/`) with end-to-end typed calls via Hono RPC.
 
 To use it, copy the repo (or `gh repo create --template`), then rename the
