@@ -1,2 +1,6 @@
 [serve.static]
 plugins = ["bun-plugin-svelte", "bun-plugin-tailwind"]
+
+[install]
+# Supply-chain guard: only resolve versions published at least 7 days ago
+minimumReleaseAge = 604800
