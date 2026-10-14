@@ -1,0 +1,53 @@
+# bun-svelte-starter
+
+Full-stack Bun app that compiles to a single binary (`dist/app`).
+Svelte 5 SPA in `web/`, Hono + Zod API in `server/`, end-to-end typed via Hono RPC.
+No Vite, no Node.js — Bun bundles everything, including the frontend.
+
+## Commands
+
+- `bun run dev` — dev server with HMR on http://localhost:3000
+- `bun run build` — standalone binary at `dist/app`
+- `bun run check` — svelte-check (type-checks `.ts` and `.svelte`)
+- `bun run lint` / `bun run format` — ESLint / Prettier
+
+All of check, lint, and format must pass before committing.
+
+## Architecture
+
+- `index.ts` — entry point. `Bun.serve()` serves the imported `web/index.html`
+  at `/` and delegates `/api/*` to the Hono app.
+- `server/index.ts` — Hono app on `.basePath("/api")`. Validate request bodies
+  with `zValidator` from `@hono/zod-validator`. Routes MUST stay in the chained
+  style (`new Hono().get(...).post(...)`) — `export type AppType` powers the
+  RPC client, and standalone `app.get(...)` calls break type inference.
+- `web/api.ts` — typed client: `hc<AppType>(...)`. Frontend calls the API only
+  through this client.
+- `web/` — Svelte 5 with runes (`$state`, `$derived`; `mount` from `svelte`).
+  Client-side rendering only: `bun-plugin-svelte` does not support SSR.
+- `web/app.css` — `@import "tailwindcss"` (Tailwind v4, no config file).
+
+## Build pipeline
+
+- Dev: `bunfig.toml` registers `bun-plugin-svelte` and `bun-plugin-tailwind`
+  under `[serve.static]` so the dev server compiles `.svelte` files and
+  Tailwind on the fly.
+- Production: `build.ts` uses the `Bun.build()` JS API with
+  `compile: { outfile }` and the same plugins. A build script is required —
+  the `bun build` CLI does not support plugins.
+
+## Gotchas
+
+- Compiled Bun binaries default `NODE_ENV` to `development`. `build.ts` inlines
+  `process.env.NODE_ENV = "production"` via `define`; don't remove it, or the
+  binary serves unminified assets with HMR enabled.
+- Style with Tailwind utility classes in markup. Tailwind syntax (`@apply`)
+  inside Svelte `<style>` blocks is not processed by the plugin.
+
+## Bun conventions
+
+- `bun <file>`, `bun test`, `bun install`, `bunx` — never node/npm/npx/vite/jest.
+- Prefer built-ins: `Bun.serve()`, `bun:sqlite`, `Bun.file`, `Bun.$`, built-in
+  `WebSocket` — over express/better-sqlite3/node:fs/execa/ws.
+- Bun loads `.env` automatically — don't use dotenv.
+- Bun API docs: `node_modules/bun-types/docs/**.mdx`.
